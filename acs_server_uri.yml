@@ -1,0 +1,50 @@
+---
+# Ansible script to clearn up ACS Server
+# Author : Allan D.M Maseghe
+# Contacts: https://www.linkedin.com/in/allan-m-2a955931/
+
+- name: Transition out of devices
+  hosts: device_group
+  gather_facts: false
+  
+  vars:
+    ansible_connection: network_cli
+    ansible_network_os: ios
+    acs_base_url: https://{{ Your ACS server hostname or IP }}/Rest/NetworkDevice/Device/name/  
+  
+  tasks:
+    # Step 1 : Obtain device hostname using ios_facts.
+    # Hostname completes the url to be querried/used in the subsequent tasks
+    - name: Collect {{ inventory_hostname }} ios facts
+      ios_facts:
+
+      vars:
+        ansible_ssh_usr: "{{ your device access user name }}"
+        ansible_ssh_pass: "{{ your device access passwords }}"
+   
+    # Step 2: Perfom operation on ACS Server
+    # NB : Define your passwords in a vars file..Remember to ansible-vault encyrypt :) :)
+
+    - name: "GET details for {{ ansible_net_hostname }} in ACS Server"
+      uri: 
+        url: "{{ acs_base_url }}{{ ansible_net_hostname }}"
+        validate_certs: no
+        user: "{{ acs_user }}"
+        password: "{{ acs_password }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: checks
+      delegate_to: localhost
+
+    - name: "DELETE {{ ansible_net_hostname }} from ACS Server"
+      uri:
+        url: "{{ acs_base_url }}{{ ansible_net_hostname }}"
+        validate_certs: no
+        user: "{{ acs_user }}"
+        password: "{{ acs_password }}"
+        method: DELETE
+        force_basic_auth: yes
+        status_code: 204
+      register: delete
+      delegate_to: localhost 
+...
